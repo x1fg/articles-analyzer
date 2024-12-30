@@ -9,11 +9,12 @@ services:
     environment:
       - DATABASE_URL=postgresql://arxiv_user:arxiv_pass@db:5432/arxiv
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TELEGRAM_API_KEY=${TELEGRAM_API_KEY}
     volumes:
       - ./app:/app
     depends_on:
       - db
-    command: python src/bot/bot.py
+    command: python main.py bot
 
   db:
     image: postgres:15

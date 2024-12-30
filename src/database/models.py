@@ -16,6 +16,9 @@ class Article(Base):
     pdf_url = Column(String, nullable=True)
     file_path = Column(String, nullable=True)
     summary = Column(Text, nullable=True)
+    summary_path = Column(String, nullable=True)  # Новая колонка
 
 def init_db():
+    print("Создание таблиц в базе данных...")
     Base.metadata.create_all(bind=engine)
+    print("Таблицы успешно созданы.")

@@ -77,15 +77,36 @@ async def stats_command(message: Message):
 @router.message(Command("list"))
 async def list_command(message: Message):
     """Обработчик команды /list."""
-    articles = get_articles_by_period(days=30)
-    if not articles:
-        await message.answer("Нет доступных статей за последний месяц.")
+    query = message.text[len("/list "):].strip()
+    if not query:
+        await message.answer(
+            "❌ Укажите ключевое слово для фильтрации статей.\n"
+            "Например: `/list LLM`",
+            parse_mode="Markdown"
+        )
         return
 
-    response = "📋 Список статей за последний месяц:\n"
+    session = SessionLocal()
+    since_date = datetime.now() - timedelta(days=30)
+    articles = session.query(Article).filter(
+        Article.published_date >= since_date,
+        Article.title.ilike(f"%{query}%")
+    ).order_by(Article.published_date.desc()).all()
+    session.close()
+
+    if not articles:
+        await message.answer(f"❌ Нет статей, содержащих ключевое слово '{query}' за последний месяц.")
+        return
+
+    response = f"📋 Список статей за последний месяц по ключевому слову '{query}':\n"
     for article in articles[:10]:
-        response += f"- {article.title} (Дата: {article.published_date.date()})\n"
-    await message.answer(response)
+        summary_link = f"[Краткое содержание]({article.summary_path})" if article.summary_path else "Суммаризация отсутствует"
+        response += (
+            f"- {article.title} (Дата: {article.published_date.date()})\n"
+            f"  🔗 [Оригинал статьи]({article.pdf_url}) | {summary_link}\n"
+        )
+
+    await message.answer(response, parse_mode="Markdown")
 
 @router.message(Command("search"))
 async def search_command(message: Message):

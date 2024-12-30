@@ -1,41 +1,83 @@
 import os
-from database.models import SessionLocal, Article
-from openai import OpenAI
+from src.api_caller import APICaller
+from src.database.models import SessionLocal, Article
 from src.config.settings import OPENAI_API_KEY
 
 class Summarizer:
     def __init__(self, summary_folder='data/summaries'):
-        self.client = OpenAI(api_key=OPENAI_API_KEY)
+        """
+        Инициализация класса Summarizer.
+
+        Args:
+            summary_folder (str): Папка для сохранения текстовых файлов с суммаризациями.
+        """
+        self.api_caller = APICaller(api_key=OPENAI_API_KEY)
         self.summary_folder = summary_folder
         if not os.path.exists(self.summary_folder):
             os.makedirs(self.summary_folder)
 
     def summarize_article(self, article):
-        prompt = f"Суммаризируй научную статью:\n\n{article.title}"
+        """
+        Генерация суммаризации для переданной статьи.
+
+        Args:
+            article (Article): Объект статьи из базы данных.
+
+        Returns:
+            str: Текст суммаризации.
+        """
+        system_prompt = "Ты помощник для суммаризации научных статей."
+        user_prompt = f"Суммаризируй следующую статью: {article.title}"
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "Ты помощник для суммаризации статей."},
-                    {"role": "user", "content": prompt}
-                ],
+            print(f"🔍 Генерация суммаризации для статьи: {article.title}")
+            summary = self.api_caller.call_gpt35_turbo(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
                 max_tokens=300,
                 temperature=0.7
             )
-            summary = response.choices[0].message.content.strip()
             return summary
         except Exception as e:
-            print(f"Ошибка суммаризации: {e}")
+            print(f"❌ Ошибка суммаризации для статьи '{article.title}': {e}")
+            return None
+
+    def save_summary_to_file(self, article, summary):
+        """
+        Сохраняет суммаризацию статьи в текстовый файл.
+
+        Args:
+            article (Article): Объект статьи из базы данных.
+            summary (str): Текст суммаризации.
+
+        Returns:
+            str: Путь к сохранённому файлу.
+        """
+        safe_title = "".join(c if c.isalnum() else "_" for c in article.title[:50])
+        filename = f"{safe_title}_{article.id}.txt"
+        file_path = os.path.join(self.summary_folder, filename)
+        try:
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(summary)
+            print(f"✅ Суммаризация сохранена: {file_path}")
+            return file_path
+        except Exception as e:
+            print(f"❌ Ошибка сохранения суммаризации для статьи '{article.title}': {e}")
             return None
 
     def process_all(self):
+        """
+        Генерация и сохранение суммаризаций для всех статей без суммаризации.
+        """
         session = SessionLocal()
         articles = session.query(Article).filter(Article.summary == None).all()
+        print(f"⏳ Найдено статей для обработки: {len(articles)}")
         for article in articles:
-            print(f"Суммаризация статьи: {article.title}")
             summary = self.summarize_article(article)
             if summary:
-                article.summary = summary
-                session.commit()
-                print(f"Суммаризация сохранена: {article.title}")
+                summary_path = self.save_summary_to_file(article, summary)
+                if summary_path:
+                    article.summary = summary
+                    article.summary_path = summary_path
+                    session.commit()
+                    print(f"✅ Суммаризация завершена для статьи: {article.title}")
         session.close()
