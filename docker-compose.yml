@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arxiv_bot
+    environment:
+      - DATABASE_URL=postgresql://arxiv_user:arxiv_pass@db:5432/arxiv
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./app:/app
+    depends_on:
+      - db
+    command: python src/bot/bot.py
+
+  db:
+    image: postgres:15
+    container_name: arxiv_db
+    environment:
+      POSTGRES_USER: arxiv_user
+      POSTGRES_PASSWORD: arxiv_pass
+      POSTGRES_DB: arxiv
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  db_data:
