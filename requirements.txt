@@ -86,3 +86,6 @@ urllib3==2.2.3
 wcwidth==0.2.13
 wheel==0.45.1
 yarl==1.18.3
+torch
+sentence-transformers
+openai
