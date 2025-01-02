@@ -3,9 +3,6 @@ import asyncio
 import sys
 import os
 
-# Добавление корня проекта в PYTHONPATH
-#sys.path.append(os.path.abspath(os.path.dirname(__file__)))
-
 from src.bot.bot import start_bot
 from src.api.arxiv_client import ArxivParser
 from src.processing.summarizer import Summarizer

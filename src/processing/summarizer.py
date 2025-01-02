@@ -1,17 +1,14 @@
 import os
 from src.api_caller import APICaller
 from src.database.models import SessionLocal, Article
-from src.config.settings import OPENAI_API_KEY
+from src.config.settings import OPENAI_GPT_API_KEY
 
 class Summarizer:
     def __init__(self, summary_folder='data/summaries'):
         """
         Инициализация класса Summarizer.
-
-        Args:
-            summary_folder (str): Папка для сохранения текстовых файлов с суммаризациями.
         """
-        self.api_caller = APICaller(api_key=OPENAI_API_KEY)
+        self.api_caller = APICaller(api_key=OPENAI_GPT_API_KEY)
         self.summary_folder = summary_folder
         if not os.path.exists(self.summary_folder):
             os.makedirs(self.summary_folder)
@@ -19,12 +16,6 @@ class Summarizer:
     def summarize_article(self, article):
         """
         Генерация суммаризации для переданной статьи.
-
-        Args:
-            article (Article): Объект статьи из базы данных.
-
-        Returns:
-            str: Текст суммаризации.
         """
         system_prompt = "Ты помощник для суммаризации научных статей."
         user_prompt = f"Суммаризируй следующую статью: {article.title}"
@@ -44,13 +35,6 @@ class Summarizer:
     def save_summary_to_file(self, article, summary):
         """
         Сохраняет суммаризацию статьи в текстовый файл.
-
-        Args:
-            article (Article): Объект статьи из базы данных.
-            summary (str): Текст суммаризации.
-
-        Returns:
-            str: Путь к сохранённому файлу.
         """
         safe_title = "".join(c if c.isalnum() else "_" for c in article.title[:50])
         filename = f"{safe_title}_{article.id}.txt"
