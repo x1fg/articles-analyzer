@@ -1,0 +1,15 @@
+version: '3.7'
+
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arxiv_bot
+    environment:
+      - DATABASE_URL=sqlite:///arxiv.db
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TELEGRAM_API_KEY=${TELEGRAM_API_KEY}
+    volumes:
+      - .:/app
+    command: python main.py bot
