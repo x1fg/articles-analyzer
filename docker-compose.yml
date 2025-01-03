@@ -1,3 +1,5 @@
+version: '3.7'
+
 services:
   bot:
     build:
@@ -10,23 +12,4 @@ services:
       - TELEGRAM_API_KEY=${TELEGRAM_API_KEY}
     volumes:
       - .:/app
-      - db_data:/app
-
-  parser:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: arxiv_parser
-    environment:
-      - DATABASE_URL=sqlite:///app/arxiv.db
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-    volumes:
-      - .:/app
-      - db_data:/app
-    entrypoint: ["/bin/sh", "-c"]
-    command: >
-      echo "0 3 * * * python main.py parser >> /app/logs/parser.log 2>&1" > /etc/crontabs/root &&
-      crond -f -d 8
-
-volumes:
-  db_data:
+    command: python main.py bot
